@@ -312,6 +312,7 @@ def cli_evaluate(args: Union[argparse.Namespace, None] = None) -> None:
     from lm_eval.utils import (
         handle_non_serializable,
         make_table,
+        render_markdown,
         simple_parse_args_string,
     )
 
@@ -383,16 +384,20 @@ def cli_evaluate(args: Union[argparse.Namespace, None] = None) -> None:
         eval_logger.error("Need to specify task to evaluate.")
         sys.exit()
     elif args.tasks == "list":
-        print(task_manager.list_all_tasks())
+        render_markdown(task_manager.list_all_tasks())
         sys.exit()
     elif args.tasks == "list_groups":
-        print(task_manager.list_all_tasks(list_subtasks=False, list_tags=False))
+        render_markdown(
+            task_manager.list_all_tasks(list_subtasks=False, list_tags=False)
+        )
         sys.exit()
     elif args.tasks == "list_tags":
-        print(task_manager.list_all_tasks(list_groups=False, list_subtasks=False))
+        render_markdown(
+            task_manager.list_all_tasks(list_groups=False, list_subtasks=False)
+        )
         sys.exit()
     elif args.tasks == "list_subtasks":
-        print(task_manager.list_all_tasks(list_groups=False, list_tags=False))
+        render_markdown(task_manager.list_all_tasks(list_groups=False, list_tags=False))
         sys.exit()
     else:
         if os.path.isdir(args.tasks):
@@ -418,7 +423,7 @@ def cli_evaluate(args: Union[argparse.Namespace, None] = None) -> None:
                 missing = ", ".join(task_missing)
                 eval_logger.error(
                     f"Tasks were not found: {missing}\n"
-                    f"{utils.SPACING}Try `lm-eval --tasks list` for list of available tasks",
+                    f"Try `lm-eval --tasks list` for list of available tasks",
                 )
                 raise ValueError(
                     f"Tasks not found: {missing}. Try `lm-eval --tasks {{list_groups,list_subtasks,list_tags,list}}` to list out all available names for task groupings; only (sub)tasks; tags; or all of the above, or pass '--verbosity DEBUG' to troubleshoot task registration issues."

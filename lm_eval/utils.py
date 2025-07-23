@@ -14,8 +14,14 @@ from pathlib import Path
 from typing import Any, Callable, Generator, List, Optional, Tuple
 
 import numpy as np
+import rich
 import yaml
 from jinja2 import BaseLoader, Environment, StrictUndefined
+from rich import box
+from rich.console import Console, ConsoleOptions, RenderResult
+from rich.logging import RichHandler
+from rich.markdown import Markdown, TableElement
+from rich.table import Table
 
 
 SPACING = " " * 47
@@ -24,6 +30,28 @@ HIGHER_IS_BETTER_SYMBOLS = {
     True: "↑",
     False: "↓",
 }
+
+
+class HeavyTableElement(TableElement):
+    """
+    Custom table element which defaults markdown to heavy box
+    """
+
+    def __rich_console__(
+        self, console: Console, options: ConsoleOptions
+    ) -> RenderResult:
+        table = Table(box=box.HEAVY_HEAD)
+
+        if self.header is not None and self.header.row is not None:
+            for column in self.header.row.cells:
+                table.add_column(column.content)
+
+        if self.body is not None:
+            for row in self.body.rows:
+                row_content = [element.content for element in row.cells]
+                table.add_row(*row_content)
+
+        yield table
 
 
 def wrap_text(string: str, width: int = 140, **kwargs) -> Optional[str]:
@@ -44,18 +72,6 @@ def wrap_text(string: str, width: int = 140, **kwargs) -> Optional[str]:
 
 
 def setup_logging(verbosity=logging.INFO):
-    # Configure the root logger
-    class CustomFormatter(logging.Formatter):
-        def format(self, record):
-            if record.name.startswith("lm_eval."):
-                record.name = record.name[len("lm_eval.") :]
-            return super().format(record)
-
-    formatter = CustomFormatter(
-        "%(asctime)s %(levelname)-8s [%(name)s:%(lineno)d] %(message)s",
-        datefmt="%Y-%m-%d:%H:%M:%S",
-    )
-
     log_level = os.environ.get("LOGLEVEL", verbosity) or verbosity
 
     level_map = {
@@ -69,8 +85,7 @@ def setup_logging(verbosity=logging.INFO):
     log_level = level_map.get(str(log_level).upper(), logging.INFO)
 
     if not logging.root.handlers:
-        handler = logging.StreamHandler()
-        handler.setFormatter(formatter)
+        handler = RichHandler(show_path=True, log_time_format="%Y-%m-%d:%H:%M:%S")
 
         root_logger = logging.getLogger()
         root_logger.addHandler(handler)
@@ -82,6 +97,12 @@ def setup_logging(verbosity=logging.INFO):
                 logging.getLogger(logger_name).setLevel(logging.INFO)
     else:
         logging.getLogger().setLevel(log_level)
+
+
+def render_markdown(table: str):
+    Markdown.elements["table_open"] = HeavyTableElement
+    rich.print(Markdown(table))
+    Markdown.elements["table_open"] = TableElement
 
 
 def hash_string(string: str) -> str:
