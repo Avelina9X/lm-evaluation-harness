@@ -499,11 +499,7 @@ def cli_evaluate(args: Union[argparse.Namespace, None] = None) -> None:
             results, indent=2, default=handle_non_serializable, ensure_ascii=False
         )
         if args.show_config:
-            (
-                rich.print(dumped)
-                if eval_logger.getEffectiveLevel() > logging.INFO
-                else eval_logger.info(dumped)
-            )
+            rich.print(dumped)
 
         batch_sizes = ",".join(map(str, results["config"]["batch_sizes"]))
 
