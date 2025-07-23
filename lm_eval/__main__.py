@@ -455,7 +455,7 @@ def cli_evaluate(args: Union[argparse.Namespace, None] = None) -> None:
     (
         eval_logger.info(f"Selected Tasks: {task_names}")
         if eval_logger.getEffectiveLevel() >= logging.INFO
-        else print(f"Selected Tasks: {task_names}")
+        else rich.print(f"Selected Tasks: {task_names}")
     )
 
     request_caching_args = request_caching_arg_to_dict(
@@ -499,7 +499,11 @@ def cli_evaluate(args: Union[argparse.Namespace, None] = None) -> None:
             results, indent=2, default=handle_non_serializable, ensure_ascii=False
         )
         if args.show_config:
-            print(dumped)
+            (
+                rich.print(dumped)
+                if eval_logger.getEffectiveLevel() > logging.INFO
+                else eval_logger.info(dumped)
+            )
 
         batch_sizes = ",".join(map(str, results["config"]["batch_sizes"]))
 
@@ -529,13 +533,26 @@ def cli_evaluate(args: Union[argparse.Namespace, None] = None) -> None:
         ):
             evaluation_tracker.recreate_metadata_card()
 
-        print(
-            f"{args.model} ({args.model_args}), gen_kwargs: ({args.gen_kwargs}), limit: {args.limit}, num_fewshot: {args.num_fewshot}, "
-            f"batch_size: {args.batch_size}{f' ({batch_sizes})' if batch_sizes else ''}"
+        model_args = (
+            args.model_args
+            if isinstance(args.model_args, dict)
+            else simple_parse_args_string(args.model_args)
         )
-        print(make_table(results))
+        gen_kwargs = (
+            args.gen_kwargs
+            if isinstance(args.gen_kwargs, dict)
+            else simple_parse_args_string(args.gen_kwargs)
+        )
+        eval_logger.info(
+            f"{args.model}={model_args}, "
+            f"gen_kwargs={gen_kwargs}, "
+            f"limit={args.limit}, "
+            f"num_fewshot={args.num_fewshot}, "
+            f"batch_size={args.batch_size}{f' ({batch_sizes})' if batch_sizes else ''}"
+        )
+        render_markdown(make_table(results))
         if "groups" in results:
-            print(make_table(results, "groups"))
+            render_markdown(make_table(results, "groups"))
 
         if args.wandb_args:
             # Tear down wandb run once all the logging is done.
