@@ -7,6 +7,8 @@ from functools import partial
 from pathlib import Path
 from typing import Union
 
+import rich.traceback
+
 
 def try_parse_json(value: str) -> Union[str, dict, None]:
     if value is None:
@@ -324,6 +326,9 @@ def cli_evaluate(args: Union[argparse.Namespace, None] = None) -> None:
     utils.setup_logging(args.verbosity)
     eval_logger = logging.getLogger(__name__)
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+    # patch traceback rendering, show locals if DEBUG
+    rich.traceback.install(show_locals=eval_logger.getEffectiveLevel() == logging.DEBUG)
 
     # update the evaluation tracker args with the output path and the HF token
     if args.output_path:
