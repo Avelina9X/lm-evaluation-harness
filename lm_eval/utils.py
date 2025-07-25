@@ -99,10 +99,13 @@ def setup_logging(verbosity=logging.INFO):
         logging.getLogger().setLevel(log_level)
 
 
-def render_markdown(table: str):
-    Markdown.elements["table_open"] = HeavyTableElement
-    rich.print(Markdown(table))
-    Markdown.elements["table_open"] = TableElement
+def render_markdown(table: str, raw_markdown: bool):
+    if raw_markdown:
+        print(table)
+    else:
+        Markdown.elements["table_open"] = HeavyTableElement
+        rich.print(Markdown(table))
+        Markdown.elements["table_open"] = TableElement
 
 
 def hash_string(string: str) -> str:

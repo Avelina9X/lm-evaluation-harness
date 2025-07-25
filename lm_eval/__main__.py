@@ -296,6 +296,11 @@ def setup_parser() -> argparse.ArgumentParser:
         default=None,
         help="""JSON string metadata to pass to task configs, for example '{"max_seq_lengths":[4096,8192]}'. Will be merged with model_args. Can also be set in task config.""",
     )
+    parser.add_argument(
+        "--raw_markdown",
+        action="store_true",
+        help="Reverts pretty-print behaviour for tables to the raw markdown format for easy copy-paste support",
+    )
     return parser
 
 
@@ -393,20 +398,25 @@ def cli_evaluate(args: Union[argparse.Namespace, None] = None) -> None:
         eval_logger.error("Need to specify task to evaluate.")
         sys.exit()
     elif args.tasks == "list":
-        render_markdown(task_manager.list_all_tasks())
+        render_markdown(task_manager.list_all_tasks(), args.raw_markdown)
         sys.exit()
     elif args.tasks == "list_groups":
         render_markdown(
-            task_manager.list_all_tasks(list_subtasks=False, list_tags=False)
+            task_manager.list_all_tasks(list_subtasks=False, list_tags=False),
+            args.raw_markdown,
         )
         sys.exit()
     elif args.tasks == "list_tags":
         render_markdown(
-            task_manager.list_all_tasks(list_groups=False, list_subtasks=False)
+            task_manager.list_all_tasks(list_groups=False, list_subtasks=False),
+            args.raw_markdown,
         )
         sys.exit()
     elif args.tasks == "list_subtasks":
-        render_markdown(task_manager.list_all_tasks(list_groups=False, list_tags=False))
+        render_markdown(
+            task_manager.list_all_tasks(list_groups=False, list_tags=False),
+            args.raw_markdown,
+        )
         sys.exit()
     else:
         if os.path.isdir(args.tasks):
@@ -560,9 +570,9 @@ def cli_evaluate(args: Union[argparse.Namespace, None] = None) -> None:
         )
         rich.print(table)
 
-        render_markdown(make_table(results))
+        render_markdown(make_table(results), args.raw_markdown)
         if "groups" in results:
-            render_markdown(make_table(results, "groups"))
+            render_markdown(make_table(results, "groups"), args.raw_markdown)
 
         if args.wandb_args:
             # Tear down wandb run once all the logging is done.
