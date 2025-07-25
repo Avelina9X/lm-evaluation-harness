@@ -7,7 +7,11 @@ from functools import partial
 from pathlib import Path
 from typing import Union
 
+import rich
 import rich.traceback
+from rich.highlighter import ReprHighlighter
+from rich.pretty import Pretty
+from rich.table import Table
 
 
 def try_parse_json(value: str) -> Union[str, dict, None]:
@@ -539,13 +543,23 @@ def cli_evaluate(args: Union[argparse.Namespace, None] = None) -> None:
             if isinstance(args.gen_kwargs, dict)
             else simple_parse_args_string(args.gen_kwargs)
         )
-        eval_logger.info(
-            f"{args.model}={model_args}, "
-            f"gen_kwargs={gen_kwargs}, "
-            f"limit={args.limit}, "
-            f"num_fewshot={args.num_fewshot}, "
-            f"batch_size={args.batch_size}{f' ({batch_sizes})' if batch_sizes else ''}"
+
+        highlighter = ReprHighlighter()
+        table = Table(
+            "Model", "Model args", "Gen kwargs", "Limit", "n-shot", "Batch Size"
         )
+        table.add_row(
+            highlighter(args.model),
+            Pretty(model_args),
+            Pretty(gen_kwargs),
+            Pretty(args.limit),
+            Pretty(args.limit),
+            highlighter(
+                f"{args.batch_size}{f' ({batch_sizes})' if batch_sizes else ''}"
+            ),
+        )
+        rich.print(table)
+
         render_markdown(make_table(results))
         if "groups" in results:
             render_markdown(make_table(results, "groups"))
